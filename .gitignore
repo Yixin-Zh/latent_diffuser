@@ -1,0 +1,73 @@
+# Byte-compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# # Virtual environment directories
+# venv/
+# env/
+# .venv/
+# .env/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Logs and databases
+logs/
+*.log
+outputs/
+
+# Hydra configs and logs
+**/.hydra/
+**/train.log
+
+# IDE/editor directories
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+scripts/outputs
+scripts/results
+scripts/results_fordyn
+scripts/results_no_fordyn
+dreamer_scripts/outputs
+dreamer_scripts/results
+data/
+test.py
+logs/
+outputs/
+robomimic_scripts/outputs
+robomimic_scripts/results
+robomimic_scripts/logs
+results/
+*.mp4
+*.png
+agent_scripts/results
+hand_scripts/results
+tsne/
+bc_img_scripts/results
+bc_scripts/results
+bc_img_scriptsv2/results
+bc_img_scriptsv3/results
+bc_scripts/results
+bc_img_scriptsv2/results

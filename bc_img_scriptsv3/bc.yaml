@@ -1,0 +1,59 @@
+pipeline_name: dd
+
+# env
+env_name: lift
+env_type: ph
+abs_action: false
+#datapath: /nethome/yzhang4179/flash/robomimic/datasets/lift/ph/image.hdf5
+# datapath: /home/yixin/Downloads/robomimic_low_dim/datasets/lift/mh/low_dim.hdf5
+datapath: /home/yixin/Downloads/robomimic/datasets/lift/ph/image.hdf5
+mode: train
+max_episode_steps: 400
+render_obs_key: 'agentview_image'
+shape_meta:
+  action:
+    'action'
+  agentview_image:
+    'RGB'
+  
+robomimic_meta:
+  action:
+    shape:
+      - 7
+  obs:
+    agentview_image:
+      shape:
+        - 3, 84, 84
+      type: rgb
+
+
+device: cuda:0
+# eval
+model_path: /home/yixin/Desktop/model10.20/2/model_latest
+
+
+
+
+num_envs: 1
+eval_episodes: 50
+save_video: true
+eval_freq: 50000
+
+# log
+exp_name: lift_v3
+save_path: results
+project: bc
+group: bc
+wandb_mode: online
+log_freq: 1000
+save_freq: 100000
+
+# hydra
+hydra:
+  run:
+    dir: results/${project}/
+  job:
+    chdir: false
+
+
+
