@@ -17,17 +17,9 @@ from torch.utils.data import DataLoader
 from diffuser.util import set_seed, parse_cfg
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
-
-from diffuser.env.robomimic.robomimic_image_wrapper import RobomimicImageWrapper
-from diffuser.env.wrapper import VideoRecordingWrapper, MultiStepWrapper
-from diffuser.env.async_vector_env import AsyncVectorEnv
-from diffuser.env.utils import VideoRecorder
 from diffuser.dataset.robomimic_datasetv2 import RobomimicDataset
 
-from diffuser.bc.bc_img_agentv3 import Agent
-from diffuser.diffusion import ContinuousDiffusionSDE
 
-from diffuser.nn_diffusion import DiT1d
 
 from diffuser.dataset.dataset_utils import loop_dataloader
 from diffuser.utils import report_parameters
@@ -35,7 +27,7 @@ from diffuser.utils.logger import Logger
 
 
 
-@hydra.main(config_path=".", config_name="df.yaml", version_base=None)
+@hydra.main(config_path=".", config_name="train.yaml", version_base=None)
 def pipeline(args):
     # ---------------------- Create Save Path ----------------------
     save_path = f'results/{args.project}/'
@@ -46,7 +38,7 @@ def pipeline(args):
     logger = Logger(pathlib.Path(save_path), args)
 
     # ---------------------- Create World Model ----------------------
-    agent = Agent(latent_dim= 64, action_dim=7, device=args.device)
+    agent = Agent(latent_dim= 64,action_dim=7, device=args.device)
     agent.load(args.agent_model_path)
     agent.eval()
 
@@ -55,25 +47,25 @@ def pipeline(args):
     
     # ---------------------- Start Training Diffuser ----------------------
     
-    dataset = RobomimicDataset(dataset_dir= args.datapath, shape_meta= args.shape_meta,
+    dataset = RobomimicDataset(dataset_dir=  args.datapath, shape_meta= args.shape_meta,
                                 sequence_length=8,
                                 abs_action=args.abs_action,)
     dataloader = DataLoader(dataset, 64, shuffle=True, num_workers=8, pin_memory=True, drop_last=True)
     
     # --------------- Network Architecture -----------------
     nn_diffusion = DiT1d(
-        64+7, 128,
+        64, 128,
         d_model=args.d_model, n_heads=args.n_heads, depth=args.depth, timestep_emb_type="fourier")
     
     print(f"======================= Parameter Report of Diffusion Model =======================")
     report_parameters(nn_diffusion)
     print(f"==============================================================================")
     
-     # ----------------- Masking -------------------
-    fix_mask = torch.zeros((8, 64 + 7))
-    fix_mask[0, :64] = 1.
-    loss_weight = torch.ones((8, 64 + 7))
-    loss_weight[0, 64:] = 5.
+    # ----------------- Masking -------------------
+    fix_mask = torch.zeros((8, 64))
+    fix_mask[0] = 1.
+    loss_weight = torch.ones((8, 64))
+    loss_weight[1] = args.next_obs_loss_weight
     
     # --------------- Diffusion Model with Classifier-Free Guidance --------------------
     diffuser = ContinuousDiffusionSDE(
@@ -95,12 +87,12 @@ def pipeline(args):
     n_gradient_step = 0
     for batch in loop_dataloader(dataloader):
         obs = batch['agentview_image'].to(args.device)
-        act = batch['action'].to(args.device)
+        
         latent_obs = agent.sample(obs)
     
         # ----------- Gradient Step ------------
         
-        log["avg_loss_diffusion"] += diffuser.update(torch.cat((latent_obs, act), dim=-1), step=n_gradient_step)['loss']
+        log["avg_loss_diffusion"] += diffuser.update(latent_obs, step=n_gradient_step)['loss']
         
         diffusion_lr_scheduler.step()
        
