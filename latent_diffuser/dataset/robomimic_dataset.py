@@ -2,9 +2,9 @@ import h5py
 import numpy as np
 import torch
 
-from diffuser.dataset.dataset_utils import ReplayBuffer, RotationTransformer, SequenceSampler, dict_apply
+from latent_diffuser.dataset.dataset_utils import ReplayBuffer, RotationTransformer, SequenceSampler, dict_apply
 
-from diffuser.utils import MinMaxNormalizer
+from latent_diffuser.utils import MinMaxNormalizer
 
 from collections import defaultdict
 

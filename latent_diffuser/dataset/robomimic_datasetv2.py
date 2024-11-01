@@ -3,8 +3,8 @@ import h5py
 import numpy as np
 import torch
 import numba
-from diffuser.dataset.dataset_utils import RotationTransformer
-from diffuser.utils import MinMaxNormalizer
+from latent_diffuser.dataset.dataset_utils import RotationTransformer
+from latent_diffuser.utils import MinMaxNormalizer
 
 import zarr
 import os
@@ -291,6 +291,7 @@ if __name__ == "__main__":
         "/home/yixin/Downloads/robomimic/datasets/lift/ph/image.hdf5",
         shape_meta={
             "agentview_image": "RGB",
+            "robot0_eye_in_hand_image": "RGB",
             "action": "action",
         },
         sequence_length=8,
@@ -302,6 +303,7 @@ if __name__ == "__main__":
         import time
         t1 = time.time()
         act = batch["action"].to("cuda")
-        image = batch["agentview_image"].to("cuda")
+        image1 = batch["agentview_image"].to("cuda")
+        image2 = batch["robot0_eye_in_hand_image"].to("cuda")
         print(time.time() - t1)
         

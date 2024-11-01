@@ -14,18 +14,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from diffuser.util import set_seed, parse_cfg
+from latent_diffuser.util import set_seed, parse_cfg
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
-from diffuser.dataset.robomimic_datasetv2 import RobomimicDataset
+from latent_diffuser.dataset.robomimic_datasetv2 import RobomimicDataset
 
+from latent_diffuser.dataset.dataset_utils import loop_dataloader
+from latent_diffuser.utils import report_parameters
+from latent_diffuser.utils.logger import Logger
 
-
-from diffuser.dataset.dataset_utils import loop_dataloader
-from diffuser.utils import report_parameters
-from diffuser.utils.logger import Logger
-
-
+from latent_diffuser.latent_diffuser import VAE, InvPolicy, Planner
 
 @hydra.main(config_path=".", config_name="train.yaml", version_base=None)
 def pipeline(args):
@@ -37,85 +35,122 @@ def pipeline(args):
     # ---------------------- Create Single Logger ----------------------
     logger = Logger(pathlib.Path(save_path), args)
 
-    # ---------------------- Create World Model ----------------------
-    agent = Agent(latent_dim= 64,action_dim=7, device=args.device)
-    agent.load(args.agent_model_path)
-    agent.eval()
+    # ---------------------- Create VAE ----------------------
+    vae1 = VAE(device=args.device) # for agent view
+    vae2 = VAE(device=args.device) # for robot eye in hand view
 
-
+    # ---------------------- Create Inverse Dynamics Diffsusion Policy ----------------------
+    invdyn = InvPolicy(device=args.device)
+    invdyn.train()
+    # ---------------------- Create Latent Planner ----------------------
+    planner = Planner(horizon=args.horizon, device=args.device)
+    planner.train()
     logger = Logger(pathlib.Path(save_path), args)
     
     # ---------------------- Start Training Diffuser ----------------------
-    
-    dataset = RobomimicDataset(dataset_dir=  args.datapath, shape_meta= args.shape_meta,
-                                sequence_length=8,
+    dataset = RobomimicDataset(dataset_dir=args.datapath, shape_meta= args.shape_meta,
+                                sequence_length=args.horizon,
                                 abs_action=args.abs_action,)
-    dataloader = DataLoader(dataset, 64, shuffle=True, num_workers=8, pin_memory=True, drop_last=True)
+    dataloader = DataLoader(dataset, 32, shuffle=True, num_workers=8, pin_memory=True, drop_last=True)
     
-    # --------------- Network Architecture -----------------
-    nn_diffusion = DiT1d(
-        64, 128,
-        d_model=args.d_model, n_heads=args.n_heads, depth=args.depth, timestep_emb_type="fourier")
-    
-    print(f"======================= Parameter Report of Diffusion Model =======================")
-    report_parameters(nn_diffusion)
-    print(f"==============================================================================")
-    
-    # ----------------- Masking -------------------
-    fix_mask = torch.zeros((8, 64))
-    fix_mask[0] = 1.
-    loss_weight = torch.ones((8, 64))
-    loss_weight[1] = args.next_obs_loss_weight
-    
-    # --------------- Diffusion Model with Classifier-Free Guidance --------------------
-    diffuser = ContinuousDiffusionSDE(
-        nn_diffusion,
-        fix_mask=fix_mask, loss_weight=loss_weight, ema_rate=args.ema_rate,
-        device=args.device, predict_noise=args.predict_noise, noise_schedule="linear")
-    
-   
-    
-    # ---------------------- Training ----------------------
-    diffusion_lr_scheduler = CosineAnnealingLR(diffuser.optimizer, args.diffusion_gradient_steps)
-   
-    
-    diffuser.train()
-   
-    
+
     n_gradient_step = 0
-    log = {"avg_loss_diffusion": 0., }
-    n_gradient_step = 0
+    # typical setting from the paper
+    vae_gradient_steps = 100000
+    invdyn_gradient_steps = vae_gradient_steps + 500000
+    planner_gradient_steps = invdyn_gradient_steps + 1000000
+
+    # vae_gradient_steps = 10
+    # invdyn_gradient_steps = 20
+    # planner_gradient_steps = 30
     for batch in loop_dataloader(dataloader):
-        obs = batch['agentview_image'].to(args.device)
         
-        latent_obs = agent.sample(obs)
+        obs1 = batch['agentview_image'].to(args.device)
+        obs2 = batch['robot0_eye_in_hand_image'].to(args.device)
+        action = batch['action'].to(args.device)
+
+        # ----------- VAE Update ------------
+        if n_gradient_step < vae_gradient_steps:
+            B, T, C, H, W = obs1.shape
+            obs1 = obs1.view(B*T, C, H, W)
+            obs2 = obs2.view(B*T, C, H, W)
+            log = vae1.update(obs1, step=n_gradient_step)
+            vae2.update(obs2, step=n_gradient_step)
+        
+        # make vae to eval mode once it is trained
+        if n_gradient_step == vae_gradient_steps:
+            vae1.eval()
+            vae2.eval()
+        
+        # ----------- Inverse Dynamics Update ------------
+        if n_gradient_step >= vae_gradient_steps and n_gradient_step < invdyn_gradient_steps:
+            B, T, C, H, W = obs1.shape
+            obs1 = obs1.view(B*T, C, H, W)
+            obs2 = obs2.view(B*T, C, H, W)
+
+            latent_obs1 = vae1.sample_latent(obs1) # shape: (B*T, C//2, H, W)
+            latent_obs2 = vae2.sample_latent(obs2)
+            
+            latent_obs1 = latent_obs1.view(B, T, -1) # shape: (B, T, dim)
+            latent_obs2 = latent_obs2.view(B, T, -1) # shape: (B, T, dim)
+            latent = torch.cat([latent_obs1, latent_obs2], dim=-1) # shape: (B, T, dim*2)
+
+            cur_latent = latent[:, :-1] # shape: (B, T-1, dim*2)
+            next_latent = latent[:, 1:] # shape: (B, T-1, dim*2)
+
+            act = action[:, :-1] # shape: (B, T-1, 7)
+
+            latent = torch.cat([cur_latent, next_latent], dim=-1).reshape(B*(T-1), -1) # shape: (B*(T-1), dim*4)
+            act = act.reshape(B*(T-1), -1).unsqueeze(1) # shape: (B*(T-1), 1, 7)
+            
+            log = invdyn.update(latent_obs=latent, act=act, step=n_gradient_step)
+        
+        if n_gradient_step == invdyn_gradient_steps:
+            invdyn.eval()
     
-        # ----------- Gradient Step ------------
-        
-        log["avg_loss_diffusion"] += diffuser.update(latent_obs, step=n_gradient_step)['loss']
-        
-        diffusion_lr_scheduler.step()
+        # ----------- Planner Update ------------
+        if n_gradient_step >= invdyn_gradient_steps and n_gradient_step < planner_gradient_steps:
+            B, T, C, H, W = obs1.shape
+            obs1 = obs1.view(B*T, C, H, W)
+            obs2 = obs2.view(B*T, C, H, W)
+
+            latent_obs1 = vae1.sample_latent(obs1) # shape: (B*T, C//2, H, W)
+            latent_obs2 = vae2.sample_latent(obs2)
+
+            latent_obs1 = latent_obs1.view(B, T, -1) # shape: (B, T, C//2*H*W)
+            latent_obs2 = latent_obs2.view(B, T, -1) # shape: (B, T, C//2*H*W)
+
+            latent = torch.cat([latent_obs1, latent_obs2], dim=-1) # shape: (B, T, C*H*W)
+            log = planner.update(latent_obs=latent, step=n_gradient_step)
        
         # ----------- Logging ------------
         if (n_gradient_step + 1) % args.log_freq == 0:
-            metrics = {
-                'step': n_gradient_step,
-                'avg_loss_diffusion': log["avg_loss_diffusion"] / (args.log_freq/200),
-            }
-            logger.log(metrics, 'train')  
-            log = {k: 0. for k in log}
+            
+            logger.log(log, 'train')  
+            
     
         # ----------- Saving ------------
         if (n_gradient_step + 1) % args.save_freq == 0:
-            diffuser.save(save_path + f"diffusion_ckpt_{n_gradient_step + 1}.pt")
-            diffuser.save(save_path + f"diffusion_ckpt_latest.pt")
+            if n_gradient_step < vae_gradient_steps:
+                vae1.save(save_path + f"vae1_ckpt_{n_gradient_step}.pt")
+                vae2.save(save_path + f"vae2_ckpt_{n_gradient_step}.pt")
+            elif n_gradient_step >= vae_gradient_steps and n_gradient_step < invdyn_gradient_steps:
+                invdyn.save(save_path + f"invdyn_ckpt_{n_gradient_step}.pt")
+            elif n_gradient_step >= invdyn_gradient_steps and n_gradient_step < planner_gradient_steps:
+                planner.save(save_path + f"planner_ckpt_{n_gradient_step}.pt")    
+            
     
         n_gradient_step += 1
-        if n_gradient_step >= args.diffusion_gradient_steps:
+        print(f"Gradient Step: {n_gradient_step}")
+        if n_gradient_step >= planner_gradient_steps:
+            # save everything and break
+            vae1.save(save_path + f"vae1_ckpt_latest.pt")
+            vae2.save(save_path + f"vae2_ckpt_latest.pt")
+            invdyn.save(save_path + f"invdyn_ckpt_latest.pt")
+            planner.save(save_path + f"planner_ckpt_latest.pt")
             break
     
-    # ---------------------- Save Models and Finish Logging ----------------------
-    logger.save_agent(diffuser, identifier='final')
+    # ---------------------- Finish Logging ----------------------
     logger.finish()
 
 if __name__ == "__main__":

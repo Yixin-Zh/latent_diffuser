@@ -5,7 +5,7 @@ with open('requirements.txt') as f:
 
     
 setup(
-    name='diffuser',
+    name='latent_diffuser',
     version='0.1',
     packages=find_packages(),
     install_requires=requirements,

@@ -5,9 +5,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from diffuser.utils import to_tensor
+from latent_diffuser.utils import to_tensor
 
-from diffuser.nn_diffusion import BaseNNDiffusion
+from latent_diffuser.nn_diffusion import BaseNNDiffusion
 
 
 class DiffusionModel:

@@ -3,7 +3,7 @@ from gym import spaces
 import numpy as np
 from collections import defaultdict, deque
 import dill
-from diffuser.env.utils import VideoRecorder
+from latent_diffuser.env.utils import VideoRecorder
 
 # ------------------ MultiStepWrapper ------------------------
 

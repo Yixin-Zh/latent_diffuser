@@ -3,8 +3,8 @@ import numpy as np
 import torch
 import scipy.interpolate as interpolate
 import numba
-from diffuser.dataset.replay_buffer import ReplayBuffer
-import diffuser.dataset.rotation_conversions as rc
+from latent_diffuser.dataset.replay_buffer import ReplayBuffer
+import latent_diffuser.dataset.rotation_conversions as rc
 import functools
 
 

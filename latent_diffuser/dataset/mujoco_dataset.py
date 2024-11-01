@@ -4,8 +4,8 @@ import numpy as np
 import torch
 import os
 
-from diffuser.dataset.base_dataset import BaseDataset
-from diffuser.utils import MinMaxNormalizer, dict_apply
+from latent_diffuser.dataset.base_dataset import BaseDataset
+from latent_diffuser.utils import MinMaxNormalizer, dict_apply
 from torch.utils.data import DataLoader
 
 

@@ -4,8 +4,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from diffuser.nn_diffusion import BaseNNDiffusion
-from diffuser.utils import (
+from latent_diffuser.nn_diffusion import BaseNNDiffusion
+from latent_diffuser.utils import (
     at_least_ndim,
     SUPPORTED_NOISE_SCHEDULES, SUPPORTED_DISCRETIZATIONS, SUPPORTED_SAMPLING_STEP_SCHEDULE)
 from .basic import DiffusionModel
@@ -89,7 +89,7 @@ class BaseDiffusionSDE(DiffusionModel):
 
         xt, t, eps = self.add_noise(x0)
 
-        condition = self.model["condition"](condition) if condition is not None else None
+        condition = condition.to(self.device) if condition is not None else None
 
         if self.predict_noise:
             loss = (self.model["diffusion"](xt, t, condition) - eps) ** 2

@@ -10,12 +10,13 @@ conda install pytorch==2.2.2 torchvision==0.17.2 pytorch-cuda=12.1 -c pytorch -c
 ### Install Mujoco
 https://github.com/openai/mujoco-py#install-mujoco
 
+### Install
+```bash
+cd <PATH_TO_LATENT_DIFFUSER>
+pip install -e .
+```
 
 ### Install Robomimic/Robosuite
-
-```bash
-cd PATH_TO_LATENT_DIFFUSER
-pip install -e .
 ```bash
 # Install Robomimic from source (recommended)
 cd <PATH_TO_ROBOMIMIC_INSTALL_DIR>
@@ -27,11 +28,8 @@ git clone https://github.com/ARISE-Initiative/robosuite.git
 cd robosuite
 pip install -e .
 ```
-### Install
-```bash
-cd <PATH_TO_LATENT_DIFFUSER>
-pip install -e .
-```
+## Code Architecture
+
 ## Training
 
 To start training, execute the following script:

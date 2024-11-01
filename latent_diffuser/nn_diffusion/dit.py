@@ -3,8 +3,8 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-from diffuser.utils import SinusoidalEmbedding
-from diffuser.nn_diffusion import BaseNNDiffusion
+from latent_diffuser.utils import SinusoidalEmbedding
+from latent_diffuser.nn_diffusion import BaseNNDiffusion
 
 
 def modulate(x, shift, scale):

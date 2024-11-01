@@ -3,7 +3,7 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-from diffuser.utils import SUPPORTED_TIMESTEP_EMBEDDING
+from latent_diffuser.utils import SUPPORTED_TIMESTEP_EMBEDDING
 
 
 class BaseNNDiffusion(nn.Module):
