@@ -29,11 +29,35 @@ cd robosuite
 pip install -e .
 ```
 ## Code Architecture
+├── dataset
+│   ├── base_dataset.py
+│   ├── replay_buffer.py
+│   ├── robomimic_dataset.py
+│   ├── robomimic_datasetv2.py
+│   └── rotation_conversions.py
+│   └── ....
+├── diffusion
+│   ├── basic.py
+│   ├── diffusionsde.py
+├── latent_diffuser
+│   ├── __init__.py
+│   ├── invdyn.py # diffusion policy inverse dynamics
+│   ├── planner.py # latent diffusion planner
+│   └── vae.py # vae to get latent
+├── nn
+│   ├── __init__.py
+│   ├── mlp.py
+│   ├── module.py # encoder and decoder from stable diffusion
+├── nn_diffusion
+│   ├── base_nn_diffusion.py
+│   ├── dit.py 
+|.....
 
 ## Training
 
 To start training, execute the following script:
-
+You can change scripts/train.yaml, datapath to make your own datapath
+All configs are here.
 ```bash
 python scripts/train.py
 ```
