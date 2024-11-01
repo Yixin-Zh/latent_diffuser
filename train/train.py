@@ -42,7 +42,7 @@ def pipeline(args):
     )
 
     # Define gradient steps for each phase
-    vae_gradient_steps = 100000
+    vae_gradient_steps = 20000
     invdyn_gradient_steps = vae_gradient_steps + 500000
     planner_gradient_steps = invdyn_gradient_steps + 1000000
 
@@ -57,7 +57,7 @@ def pipeline(args):
 
     # Initialize DataLoader for VAE training
     vae_dataloader = DataLoader(
-        dataset, batch_size=4, shuffle=True, num_workers=8, pin_memory=True, drop_last=True
+        dataset, batch_size=2, shuffle=True, num_workers=8, pin_memory=True, drop_last=True
     )
 
     vae_loader = loop_dataloader(vae_dataloader)

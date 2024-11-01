@@ -50,7 +50,7 @@ project: latent_diffuser
 group: latent_diffuser
 wandb_mode: online
 log_freq: 1000
-save_freq: 100000
+save_freq: 50000
 
 # hydra
 hydra:
