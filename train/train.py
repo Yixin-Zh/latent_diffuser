@@ -51,12 +51,12 @@ def pipeline(args):
     dataset = RobomimicDataset(dataset_dir=args.datapath, shape_meta= args.shape_meta,
                                 sequence_length=args.horizon,
                                 abs_action=args.abs_action,)
-    dataloader = DataLoader(dataset, 32, shuffle=True, num_workers=8, pin_memory=True, drop_last=True)
+    dataloader = DataLoader(dataset, 8, shuffle=True, num_workers=8, pin_memory=True, drop_last=True)
     
 
     n_gradient_step = 0
     # typical setting from the paper
-    vae_gradient_steps = 50000
+    vae_gradient_steps = 100000
     invdyn_gradient_steps = vae_gradient_steps + 500000
     planner_gradient_steps = invdyn_gradient_steps + 1000000
 

@@ -48,7 +48,7 @@ exp_name: lift
 save_path: results
 project: latent_diffuser
 group: latent_diffuser
-wandb_mode: offline
+wandb_mode: online
 log_freq: 1000
 save_freq: 100000
 
