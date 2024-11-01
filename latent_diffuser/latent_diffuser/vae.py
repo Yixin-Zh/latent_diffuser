@@ -8,12 +8,12 @@ from latent_diffuser.nn import Encoder, Decoder
 class VAE(nn.Module):
     def __init__(self, device='cpu'):
         super(VAE, self).__init__()
-        self.encoder = Encoder(ch=64, out_ch=64, ch_mult=(1,2,4,8,16), num_res_blocks=5,
-                      attn_resolutions=[4], dropout=0.0, resamp_with_conv=True,
+        self.encoder = Encoder(ch=64, out_ch=64, ch_mult=(1,2,4,8,16), num_res_blocks=1,
+                      attn_resolutions=[16], dropout=0.0, resamp_with_conv=True,
                       in_channels=3, resolution=84, z_channels=4, double_z=True)
         
-        self.decoder = Decoder(ch=64, out_ch=3, ch_mult=(1,2,4,8,16), num_res_blocks=5,
-                        attn_resolutions=[4], dropout=0.0, resamp_with_conv=True,
+        self.decoder = Decoder(ch=64, out_ch=3, ch_mult=(1,2,4,4,8), num_res_blocks=1,
+                        attn_resolutions=[16], dropout=0.0, resamp_with_conv=True,
                         in_channels=4, resolution=5, z_channels=4, give_pre_end=False, tanh_out=False)
         self.models = nn.ModuleDict({
             "encoder": self.encoder,
