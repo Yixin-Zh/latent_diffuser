@@ -56,7 +56,7 @@ def pipeline(args):
 
     n_gradient_step = 0
     # typical setting from the paper
-    vae_gradient_steps = 100000
+    vae_gradient_steps = 50000
     invdyn_gradient_steps = vae_gradient_steps + 500000
     planner_gradient_steps = invdyn_gradient_steps + 1000000
 

@@ -29,6 +29,7 @@ cd robosuite
 pip install -e .
 ```
 ## Code Architecture
+```bash
 ├── dataset
 │   ├── base_dataset.py
 │   ├── replay_buffer.py
@@ -52,7 +53,7 @@ pip install -e .
 │   ├── base_nn_diffusion.py
 │   ├── dit.py 
 |.....
-
+```
 ## Training
 
 To start training, execute the following script:

@@ -5,9 +5,9 @@ env_name: can
 env_type: ph
 abs_action: false
 
-#datapath: /nethome/yzhang4179/flash/robomimic/datasets/lift/ph/image.hdf5
+datapath: /nethome/yzhang4179/flash/robomimic/datasets/lift/ph/image.hdf5
 # datapath: /home/yixin/Downloads/robomimic_low_dim/datasets/lift/mh/low_dim.hdf5
-datapath: /home/yixin/Downloads/robomimic/datasets/lift/ph/image.hdf5
+#datapath: /home/yixin/Downloads/robomimic/datasets/lift/ph/image.hdf5
 mode: train
 max_episode_steps: 400
 render_obs_key: 'agentview_image'
@@ -25,7 +25,7 @@ action_steps: 1
 
 agent_model_path: /nethome/yzhang4179/flash/diffuser_mujoco/bc_img_scriptsv3/results/bc/model_latest
 # train
-device: cpu
+device: cuda:0
 seed: 0
 horizon: 16
 
