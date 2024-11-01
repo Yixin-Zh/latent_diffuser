@@ -42,9 +42,9 @@ def pipeline(args):
     )
 
     # Define gradient steps for each phase
-    vae_gradient_steps = 5
-    invdyn_gradient_steps = vae_gradient_steps + 10
-    planner_gradient_steps = invdyn_gradient_steps + 10
+    vae_gradient_steps = 100000
+    invdyn_gradient_steps = vae_gradient_steps + 500000
+    planner_gradient_steps = invdyn_gradient_steps + 1000000
 
     # ---------------------- Phase 1: Train VAE1 and VAE2 ----------------------
     print("Starting Phase 1: Training VAE1 and VAE2")
@@ -75,7 +75,7 @@ def pipeline(args):
         log_vae2 = vae2.update(obs2, step=int(n_gradient_step))
 
         # Logging
-        if current_step % 200 == 0:
+        if n_gradient_step % 200 == 0:
             logger.log({**log_vae1,}, 'vae')
 
         # Saving checkpoints
