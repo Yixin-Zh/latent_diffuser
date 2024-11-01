@@ -69,7 +69,7 @@ class Logger:
         self._wandb = wandb
 
     def log(self, d, category):
-        assert category in ['pretrain', 'train','inference']
+        assert category in ['vae', 'policy','planner']
         assert 'step' in d
         print(f"[{d['step']}]", " / ".join(f"{k} {v:f}" for k, v in d.items()))
         with (self._log_dir / "metrics.jsonl").open("a") as f:
