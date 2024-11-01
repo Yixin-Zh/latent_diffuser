@@ -28,7 +28,7 @@ from latent_diffuser.latent_diffuser import VAE, InvPolicy, Planner
 @hydra.main(config_path=".", config_name="train.yaml", version_base=None)
 def pipeline(args):
 # ---------------------- Create Save Path ----------------------
-    save_path = pathlib.Path(f'results/{args.project}/')
+    save_path = pathlib.Path(f'results/{args.project}_2/')
     save_path.mkdir(parents=True, exist_ok=True)
     
     logger = Logger(save_path, args)
@@ -42,7 +42,7 @@ def pipeline(args):
     )
 
     # Define gradient steps for each phase
-    vae_gradient_steps = 20000
+    vae_gradient_steps = 30000
     invdyn_gradient_steps = vae_gradient_steps + 500000
     planner_gradient_steps = invdyn_gradient_steps + 1000000
 
